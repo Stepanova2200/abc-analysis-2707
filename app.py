@@ -234,22 +234,26 @@ def category_summary(data):
 uploaded_file = st.sidebar.file_uploader(
     label="Загрузите файл Excel с данными",
     type=["xlsx"],
-    help="Поддерживается только формат .xlsx. Файл можно выбрать из файлового менеджера."
+    help="Поддерживается только формат .xlsx."
 )
 
+# Загружаем данные из файла или локального примера
 data = load_data(uploaded_file)
+
 if data is None:
-    st.stop()
+    # Здесь останавливается только отображение контента страницы,
+    # но сам процесс загрузки файла остаётся активным!
+    st.warning("Пожалуйста, загрузите корректный файл Excel.")
+else:
+    # Меню навигации
+    page = st.sidebar.selectbox(
+        "Навигация",
+        ["ABC-анализ", "Сводная таблица категорий"],
+        index=0,
+        help="Переключайтесь между разными видами аналитики."
+    )
 
-# Меню навигации
-page = st.sidebar.selectbox(
-    "Навигация",
-    ["ABC-анализ", "Сводная таблица категорий"],
-    index=0,
-    help="Переключайтесь между разными видами аналитики."
-)
-
-if page == "ABC-анализ":
-    abc_dashboard(data)
-elif page == "Сводная таблица категорий":
-    category_summary(data)
+    if page == "ABC-анализ":
+        abc_dashboard(data)
+    elif page == "Сводная таблица категорий":
+        category_summary(data)
