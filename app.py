@@ -239,13 +239,23 @@ uploaded_file = st.file_uploader(
     key="file_uploader"
 )
 
-if uploaded_file is not None or True:  # Проверяем наличие файла или дефолтного набора данных
+if uploaded_file is not None:
+    # Сначала проверяем наличие данных
     data = load_data(uploaded_file)
+
+    if data is None:
+        # Если загрузка прошла с ошибкой, останавливаемся здесь
+        st.stop()
 else:
+    # Если файл не выбран, пробуем использовать дефолтный набор данных
+    data = load_data()
+
+if data is None:
+    # Здесь мы точно знаем, что данных нет ни в файле, ни в дефолте
     st.warning("Пожалуйста, загрузите корректный файл Excel.")
     st.stop()
 
-# Меню навигации
+# Теперь, когда у нас гарантированно есть валидные данные, показываем интерфейс
 page = st.sidebar.selectbox(
     "Навигация",
     ["ABC-анализ", "Сводная таблица категорий"],
