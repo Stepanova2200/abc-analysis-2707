@@ -3,7 +3,6 @@ import numpy as np
 import streamlit as st
 import io
 
-
 # Настройка страницы
 st.set_page_config(
     page_title="📊 Анализ ассортимента",
@@ -12,54 +11,82 @@ st.set_page_config(
 
 st.title("ABC-анализ ассортимента")
 
-# 🔎 Функция загрузки данных
+# 🔎 Функция загрузки данных (с возможностью загрузки пользователем)
 @st.cache_data(ttl=600)
-def load_data():
-    """Загружает данные из BI_2807.xlsx."""
+def load_data(uploaded_file=None):
+    """
+    Загружает данные либо из локального файла,
+    либо из файла, который пользователь выбрал в браузере.
+    """
     
-    # Путь к файлу можно изменить здесь
-    file_path = "BI_2807.xlsx"
-
-    try:
-        df = pd.read_excel(file_path, sheet_name='Слияние1')
+    # Если пользователь загрузил файл напрямую в браузер
+    if uploaded_file is not None:
+        try:
+            df = pd.read_excel(
+                uploaded_file,
+                sheet_name="Слияние1",  # Можно сделать этот параметр настраиваемым
+                engine="openpyxl"      # Для поддержки современных форматов xlsx
+            )
+            
+            st.success("Файл успешно загружен!")
         
-        required_cols = [
-            'Предмет', 
-            'Артикул поставщика',
-            'Размер',
-            'Склад',
-            'продажи шт',
-            'продажи руб',
-            'Валовая прибыль, руб',
-            'Маржинальность'
-        ]
-        
-        missing = [col for col in required_cols if col not in df.columns]
-        if len(missing) > 0:
-            st.error(f"❌ Не найдены обязательные колонки {missing}")
+        except Exception as e:
+            st.error(f"Произошла ошибка при чтении файла:\n{e}")
             return None
-
-        str_columns = ['Предмет', 'Артикул поставщика', 'Размер', 'Склад']
-        for col in str_columns:
-            df[col] = df[col].astype(str).str.strip()
-
-        numeric_columns = ['продажи шт', 'продажи руб', 'Валовая прибыль, руб']
-        for col in numeric_columns:
-            df[col] = pd.to_numeric(df[col])
-
-        df.dropna(subset=['продажи шт'], inplace=True)
-
-        return df
-
-    except Exception as e:
-        st.error(f"❌ Произошла ошибка при чтении файла:\n{e}")
+    
+    else:
+        # Если файл не был загружен, используем стандартный пример
+        file_path = "BI_2807.xlsx"
+        
+        try:
+            df = pd.read_excel(file_path, sheet_name="Слияние1")
+        
+        except FileNotFoundError:
+            st.warning("Локальный файл BI_2807.xlsx не найден.")
+            st.info("Вы можете загрузить любой другой файл Excel ниже ↓")
+            return None
+    
+    required_cols = [
+        'Предмет', 
+        'Артикул поставщика',
+        'Размер',
+        'Склад',
+        'продажи шт',
+        'продажи руб',
+        'Валовая прибыль, руб',
+        'Маржинальность'
+    ]
+    
+    missing = [col for col in required_cols if col not in df.columns]
+    if len(missing) > 0:
+        st.error(f"❌ Не найдены обязательные колонки {missing}. Пожалуйста, проверьте структуру вашего файла.")
         return None
 
+    str_columns = ['Предмет', 'Артикул поставщика', 'Размер', 'Склад']
+    for col in str_columns:
+        df[col] = df[col].astype(str).str.strip()
+
+    numeric_columns = ['продажи шт', 'продажи руб', 'Валовая прибыль, руб']
+    for col in numeric_columns:
+        df[col] = pd.to_numeric(df[col])
+
+    df.dropna(subset=['продажи шт'], inplace=True)
+
+    return df
+
+
 # ⚙️ Основной блок приложения
-data = load_data()
+uploaded_file = st.sidebar.file_uploader(
+    label="Загрузите файл Excel с данными",
+    type=["xlsx"],
+    help="Поддерживается только формат .xlsx. Файл можно выбрать из файлового менеджера."
+)
+
+data = load_data(uploaded_file)
 if data is None:
     st.stop()  
 
+# Фильтры
 with st.sidebar.expander("Фильтр"):
     selected_subject = st.selectbox(
         label="Категория товара", options=["Все"] + list(data["Предмет"].unique()),
