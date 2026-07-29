@@ -3,6 +3,7 @@ import numpy as np
 import streamlit as st
 import io
 
+
 # Настройка страницы
 st.set_page_config(
     page_title="📊 Анализ ассортимента",
@@ -20,8 +21,8 @@ def load_data(uploaded_file=None):
         try:
             df = pd.read_excel(
                 uploaded_file,
-                sheet_name="Слияние1",  # Можно сделать этот параметр настраиваемым
-                engine="openpyxl"      # Для поддержки современных форматов xlsx
+                sheet_name="Слияние1",  
+                engine="openpyxl"      
             )
             
             st.success("Файл успешно загружен!")
@@ -231,29 +232,28 @@ def category_summary(data):
 
 
 # ⚙️ Основной блок приложения
-uploaded_file = st.sidebar.file_uploader(
+uploaded_file = st.file_uploader(
     label="Загрузите файл Excel с данными",
     type=["xlsx"],
-    help="Поддерживается только формат .xlsx."
+    help="Поддерживается только формат .xlsx.",
+    key="file_uploader"
 )
 
-# Загружаем данные из файла или локального примера
-data = load_data(uploaded_file)
-
-if data is None:
-    # Здесь останавливается только отображение контента страницы,
-    # но сам процесс загрузки файла остаётся активным!
-    st.warning("Пожалуйста, загрузите корректный файл Excel.")
+if uploaded_file is not None or True:  # Проверяем наличие файла или дефолтного набора данных
+    data = load_data(uploaded_file)
 else:
-    # Меню навигации
-    page = st.sidebar.selectbox(
-        "Навигация",
-        ["ABC-анализ", "Сводная таблица категорий"],
-        index=0,
-        help="Переключайтесь между разными видами аналитики."
-    )
+    st.warning("Пожалуйста, загрузите корректный файл Excel.")
+    st.stop()
 
-    if page == "ABC-анализ":
-        abc_dashboard(data)
-    elif page == "Сводная таблица категорий":
-        category_summary(data)
+# Меню навигации
+page = st.sidebar.selectbox(
+    "Навигация",
+    ["ABC-анализ", "Сводная таблица категорий"],
+    index=0,
+    help="Переключайтесь между разными видами аналитики."
+)
+
+if page == "ABC-анализ":
+    abc_dashboard(data)
+elif page == "Сводная таблица категорий":
+    category_summary(data)
