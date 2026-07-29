@@ -3,7 +3,6 @@ import numpy as np
 import streamlit as st
 import io
 
-
 # Настройка страницы
 st.set_page_config(
     page_title="📊 Анализ ассортимента",
@@ -143,7 +142,7 @@ def abc_dashboard(data):
         ],
         format_func=lambda x: x[0],
         horizontal=True,
-    )[1]
+    )[1]  # Берём второе значение кортежа (название реальной колонки)
 
     def abc_analysis(df, column):
         sorted_df = df.sort_values(by=column, ascending=False)
@@ -169,8 +168,12 @@ def abc_dashboard(data):
             ["Предмет", "Артикул поставщика", column, f"Cumulative_{column}", "Cumulative_Percentage", "ABC_Category"]
         ].reset_index(drop=True)
 
-        # Добавляем красивый индекс (от 1 до N)
-        result.insert(0, "#", range(1, len(result) + 1))
+        # 🔴️ ИСПРАВЛЕНИЕ ЗДЕСЬ: используем критерии_choice вместо локальной column
+        config = {
+            criteria_choice: st.column_config.NumberColumn(format="%{value:,.0f}" + ("%" if "%" in criteria_choice else "")),
+            f"Cumulative_{criteria_choice}": st.column_config.NumberColumn(format="%{value:,.0f}" + ("%" if "%" in criteria_choice else "")),
+            "Cumulative_Percentage": st.column_config.ProgressColumn(format="%{value:.2f}%"),
+        }
 
         return result
 
@@ -180,15 +183,9 @@ def abc_dashboard(data):
     st.write("---")
     st.subheader("Результаты ABC-анализа")
 
-    config = {
-        column: st.column_config.NumberColumn(format="%{value:,.0f}" + ("%" if "%" in column else "")),
-        f"Cumulative_{criteria_choice}": st.column_config.NumberColumn(format="%{value:,.0f}" + ("%" if "%" in column else "")),
-        "Cumulative_Percentage": st.column_config.ProgressColumn(format="%{value:.2f}%"),
-    }
-
     st.dataframe(result, use_container_width=True, hide_index=True, column_config=config)
 
-    # 💾 Экспорт результатов в Excel (исправленная версия для pandas < 2.0)
+    # Экспорт результатов в Excel
     with io.BytesIO() as buffer:
         result.to_excel(buffer, index=False)
         buffer.seek(0)
